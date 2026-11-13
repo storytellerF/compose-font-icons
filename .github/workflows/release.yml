@@ -36,22 +36,21 @@ jobs:
           VERSION="$RELEASE_TAG"
           VERSION=${VERSION#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "ORG_GRADLE_PROJECT_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
 
       - name: Build using Gradle
-        run: ./gradlew assemble
+        run: ./gradlew -PVERSION_NAME="$VERSION" assemble
 
       - name: Run tests (desktop)
-        run: ./gradlew desktopTest
+        run: ./gradlew -PVERSION_NAME="$VERSION" desktopTest
 
       - name: Run tests (wasmJs)
-        run: ./gradlew wasmJsTest
+        run: ./gradlew -PVERSION_NAME="$VERSION" wasmJsTest
 
       - name: Check for API changes
-        run: ./gradlew apiCheck
+        run: ./gradlew -PVERSION_NAME="$VERSION" apiCheck
 
       - name: Publish to GitHub Packages and Maven Central
-        run: ./gradlew publish
+        run: ./gradlew -PVERSION_NAME="$VERSION" publish
         env:
           ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ github.token }}
