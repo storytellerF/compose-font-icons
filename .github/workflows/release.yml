@@ -1,16 +1,17 @@
-run-name: Publish tag ${{ github.ref }}
+run-name: Publish release ${{ github.event.release.tag_name }}
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 permissions:
   packages: write
   contents: write
 env:
+  RELEASE_TAG: ${{ github.event.release.tag_name }}
   JAVA_OPTS: "-Xmx4096M"
   GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096M -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
 jobs:
   release:
+    if: startsWith(github.event.release.tag_name, 'v')
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -32,9 +33,10 @@ jobs:
 
       - name: Remove the prefix from the version name
         run: |
-          VERSION="${{ github.ref }}"
-          VERSION=${VERSION#*v}
+          VERSION="$RELEASE_TAG"
+          VERSION=${VERSION#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "ORG_GRADLE_PROJECT_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
 
       - name: Build using Gradle
         run: ./gradlew assemble
@@ -57,10 +59,3 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.CENTRAL_PWD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_KEY_PWD }}
-
-      - name: Publish release
-        uses: softprops/action-gh-release@v3
-        with:
-          body_path: CHANGELOG.md
-          draft: true
-          name: ${{ env.VERSION }}
